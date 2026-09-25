@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>کافه باربیکیو گریل گاردن</title>
+<link rel="stylesheet" href="css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <h1>🔥 کافه باربیکیو گریل گاردن</h1>
+    <p>طعم اصیل کباب و آرامش</p>
+  </div>
+  <div class="table-info">
+    <span>میز شما: <strong id="tableNumber">--</strong></span>
+  </div>
+</header>
+
+<!-- انتخاب میز -->
+<div id="tableModal" class="modal">
+  <div class="modal-content">
+    <h2>لطفاً شماره میز خود را وارد کنید</h2>
+    <input type="number" id="tableInput" placeholder="مثلاً 5" min="1" max="50">
+    <button onclick="setTable()">تأیید</button>
+  </div>
+</div>
+
+<!-- تب‌ها -->
+<nav class="tabs">
+  <button class="tab active" data-category="food">🍖 غذا</button>
+  <button class="tab" data-category="drink">🥤 نوشیدنی</button>
+  <button class="tab" data-category="hookah">💨 قلیون</button>
+</nav>
+
+<main>
+  <section id="food" class="menu-section active"></section>
+  <section id="drink" class="menu-section"></section>
+  <section id="hookah" class="menu-section"></section>
+</main>
+
+<!-- سبد خرید -->
+<button id="cartBtn" class="cart-btn">
+  🛒 سبد خرید <span id="cartCount">0</span>
+</button>
+
+<div id="cartPanel" class="cart-panel">
+  <h2>سبد سفارش</h2>
+  <div id="cartItems"></div>
+  <div class="cart-total">
+    جمع کل: <strong id="cartTotal">0</strong> تومان
+  </div>
+  <button class="submit-order" onclick="submitOrder()">ثبت سفارش</button>
+  <button class="close-cart" onclick="toggleCart()">بستن</button>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

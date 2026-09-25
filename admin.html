@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پنل ادمین | گریل گاردن</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; }
+body { background: #1a1a1a; color: #f0f0f0; min-height: 100vh; }
+.header { background: linear-gradient(135deg, #8b0000, #ff4500); padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+.header h1 { font-size: 1.6rem; margin-bottom: 5px; }
+.header p { font-size: 0.9rem; opacity: 0.9; }
+.admin-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.admin-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.admin-tab { background: #2a2a2a; color: #fff; border: 2px solid #333; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.95rem; }
+.admin-tab.active { background: #ff4500; border-color: #ff4500; }
+.admin-panel { display: none; }
+.admin-panel.active { display: block; }
+.order-card { background: #2a2a2a; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-right: 4px solid #ff4500; }
+.order-card.new { border-right-color: #ff4500; }
+.order-card.preparing { border-right-color: #ffa500; }
+.order-card.served { border-right-color: #4caf50; opacity: 0.75; }
+.order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+.order-header h3 { color: #ffa500; }
+.order-items { list-style: none; margin: 10px 0; }
+.order-items li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #444; }
+.order-actions { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.order-actions button { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; color: #fff; font-size: 0.9rem; }
+.btn-prep { background: #ffa500; }
+.btn-serve { background: #4caf50; }
+.btn-delete { background: #d32f2f; }
+.menu-edit-item { background: #2a2a2a; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: grid; grid-template-columns: 2fr 3fr 1fr auto; gap: 10px; align-items: center; }
+.menu-edit-item input { background: #1a1a1a; color: #fff; border: 1px solid #444; padding: 8px; border-radius: 6px; width: 100%; }
+.menu-edit-item button { background: #d32f2f; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+.add-item-form { background: #2a2a2a; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.add-item-form input, .add-item-form select { background: #1a1a1a; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 6px; }
+.add-item-form button { background: #4caf50; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; color: #fff; }
+.badge.new { background: #ff4500; }
+.badge.preparing { background: #ffa500; }
+.badge.served { background: #4caf50; }
+.cat-title { margin: 15px 0 10px; color: #ffa500; }
+@media (max-width: 700px) {
+  .menu-edit-item { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>⚙️ پنل ادمین - گریل گاردن</h1>
+  <p>مدیریت منو و سفارشات</p>
+</header>
+
+<div class="admin-container">
+  <div class="admin-tabs">
+    <button class="admin-tab active" data-panel="orders" type="button">📋 سفارشات زنده</button>
+    <button class="admin-tab" data-panel="menu" type="button">✏️ ویرایش منو</button>
+    <button class="admin-tab" data-panel="qrcodes" type="button">📱 QR کد میزها</button>
+  </div>
+
+  <div id="orders" class="admin-panel active">
+    <h2 style="margin-bottom:15px;">سفارشات فعال</h2>
+    <div id="ordersList"></div>
+  </div>
+
+  <div id="menu" class="admin-panel">
+    <h2 style="margin-bottom:15px;">افزودن آیتم جدید</h2>
+    <div class="add-item-form">
+      <select id="newCategory">
+        <option value="food">🍖 غذا</option>
+        <option value="drink">🥤 نوشیدنی</option>
+        <option value="hookah">💨 قلیون</option>
+      </select>
+      <input id="newName" placeholder="نام آیتم">
+      <input id="newDesc" placeholder="توضیحات">
+      <input id="newPrice" type="number" placeholder="قیمت (تومان)">
+      <input id="newImg" placeholder="آدرس تصویر (اختیاری)">
+      <button type="button" id="addItemBtn">➕ افزودن</button>
+    </div>
+
+    <h2 style="margin:20px 0 15px;">منوی فعلی</h2>
+    <div id="menuEditor"></div>
+  </div>
+
+  <div id="qrcodes" class="admin-panel">
+    <h2 style="margin-bottom:15px;">QR کد میزها (1 تا 30)</h2>
+    <p style="color:#aaa; margin-bottom:15px;">اسکن کن و روی هر میز بذار</p>
+    <div id="qrGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:15px;"></div>
+  </div>
+</div>
+
+<script>
+var DEFAULT_MENU = {
+  food: [
+    { id: 'f1', name: 'چلوکباب سلطانی', desc: 'برنج ایرانی، کباب کوبیده و برگ', price: 350000, img: '' },
+    { id: 'f2', name: 'کباب بختیاری', desc: 'میکس مرغ و گوشت', price: 320000, img: '' },
+    { id: 'f3', name: 'جوجه کباب زعفرانی', desc: 'سینه مرغ مزه‌دار', price: 220000, img: '' },
+    { id: 'f4', name: 'کباب کوبیده', desc: 'دو سیخ کوبیده', price: 180000, img: '' },
+    { id: 'f5', name: 'دنده کباب', desc: 'دنده بره با سس مخصوص', price: 480000, img: '' }
+  ],
+  drink: [
+    { id: 'd1', name: 'دوغ محلی', desc: 'دوغ گازدار سنتی', price: 35000, img: '' },
+    { id: 'd2', name: 'نوشابه قوطی', desc: 'کوکا، اسپرایت', price: 30000, img: '' },
+    { id: 'd3', name: 'آب پرتقال طبیعی', desc: 'تازه‌فشرده', price: 60000, img: '' },
+    { id: 'd4', name: 'چای', desc: 'چای سیاه', price: 25000, img: '' },
+    { id: 'd5', name: 'لیموناد', desc: 'لیمو تازه با نعنا', price: 55000, img: '' }
+  ],
+  hookah: [
+    { id: 'h1', name: 'قلیون دو سیب', desc: 'تنباکو دو سیب', price: 180000, img: '' },
+    { id: 'h2', name: 'قلیون انبه', desc: 'تنباکو انبه', price: 190000, img: '' },
+    { id: 'h3', name: 'قلیون نعنا', desc: 'تنباکو خنک', price: 170000, img: '' },
+    { id: 'h4', name: 'قلیون مخلوط ویژه', desc: 'ترکیب مخصوص', price: 220000, img: '' }
+  ]
+};
+
+function getMenu() {
+  try {
+    var saved = localStorage.getItem('grillMenu');
+    return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_MENU));
+  } catch (e) {
+    return JSON.parse(JSON.stringify(DEFAULT_MENU));
+  }
+}
+
+function saveMenu(menu) {
+  localStorage.setItem('grillMenu', JSON.stringify(menu));
+}
+
+function getOrders() {
+  try {
+    return JSON.parse(localStorage.getItem('orders') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveOrders(orders) {
+  localStorage.setItem('orders', JSON.stringify(orders));
+}
+
+function showPanel(panelId) {
+  var tabs = document.querySelectorAll('.admin-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    if (tabs[i].getAttribute('data-panel') === panelId) {
+      tabs[i].classList.add('active');
+    } else {
+      tabs[i].classList.remove('active');
+    }
+  }
+
+  var panels = document.querySelectorAll('.admin-panel');
+  for (var j = 0; j < panels.length; j++) {
+    if (panels[j].id === panelId) {
+      panels[j].classList.add('active');
+    } else {
+      panels[j].classList.remove('active');
+    }
+  }
+
+  if (panelId === 'orders') renderOrders();
+  if (panelId === 'menu') renderMenuEditor();
+  if (panelId === 'qrcodes') renderQRCodes();
+}
+
+function renderOrders() {
+  var container = document.getElementById('ordersList');
+  if (!container) return;
+
+  var orders = getOrders().sort(function (a, b) {
+    return new Date(b.time) - new Date(a.time);
+  });
+
+  if (orders.length === 0) {
+    container.innerHTML = '<p style="color:#888; text-align:center; padding:30px;">هیچ سفارشی وجود ندارد</p>';
+    return;
+  }
+
+  container.innerHTML = '';
+
+  orders.forEach(function (order) {
+    var time = new Date(order.time).toLocaleTimeString('fa-IR');
+    var statusText = order.status === 'new' ? 'جدید' : order.status === 'preparing' ? 'در حال آماده‌سازی' : 'تحویل شده';
+
+    var itemsHtml = '';
+    order.items.forEach(function (i) {
+      itemsHtml += '<li><span>' + i.name + ' × ' + i.qty + '</span><span>' + (i.price * i.qty).toLocaleString('fa-IR') + ' تومان</span></li>';
+    });
+
+    var div = document.createElement('div');
+    div.className = 'order-card ' + order.status;
+    div.innerHTML =
+      '<div class="order-header">' +
+        '<h3>🪑 میز ' + order.table + '</h3>' +
+        '<span class="badge ' + order.status + '">' + statusText + '</span>' +
+      '</div>' +
+      '<small style="color:#888;">کد: ' + order.id + ' | ساعت: ' + time + '</small>' +
+      '<ul class="order-items">' + itemsHtml + '</ul>' +
+      '<div style="text-align:left; font-size:1.1rem;">جمع: <strong style="color:#4caf50;">' + order.total.toLocaleString('fa-IR') + ' تومان</strong></div>' +
+      '<div class="order-actions">' +
+        (order.status === 'new' ? '<button class="btn-prep" data-action="prep" data-id="' + order.id + '">👨‍🍳 شروع آماده‌سازی</button>' : '') +
+        (order.status === 'preparing' ? '<button class="btn-serve" data-action="serve" data-id="' + order.id + '">✅ تحویل شد</button>' : '') +
+        '<button class="btn-delete" data-action="del" data-id="' + order.id + '">🗑 حذف</button>' +
+      '</div>';
+
+    container.appendChild(div);
+  });
+
+  container.querySelectorAll('button[data-action]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var action = this.getAttribute('data-action');
+      var id = this.getAttribute('data-id');
+      if (action === 'prep') changeStatus(id, 'preparing');
+      if (action === 'serve') changeStatus(id, 'served');
+      if (action === 'del') deleteOrder(id);
+    });
+  });
+}
+
+function changeStatus(id, status) {
+  var orders = getOrders();
+  for (var i = 0; i < orders.length; i++) {
+    if (orders[i].id === id) orders[i].status = status;
+  }
+  saveOrders(orders);
+  renderOrders();
+}
+
+function deleteOrder(id) {
+  if (!confirm('حذف این سفارش؟')) return;
+  var orders = getOrders().filter(function (o) { return o.id !== id; });
+  saveOrders(orders);
+  renderOrders();
+}
+
+function renderMenuEditor() {
+  var menu = getMenu();
+  var container = document.getElementById('menuEditor');
+  if (!container) return;
+  container.innerHTML = '';
+
+  var catNames = { food: '🍖 غذا', drink: '🥤 نوشیدنی', hookah: '💨 قلیون' };
+
+  ['food', 'drink', 'hookah'].forEach(function (cat) {
+    var h = document.createElement('h3');
+    h.className = 'cat-title';
+    h.textContent = catNames[cat];
+    container.appendChild(h);
+
+    menu[cat].forEach(function (item) {
+      var div = document.createElement('div');
+      div.className = 'menu-edit-item';
+      div.innerHTML =
+        '<input value="' + item.name.replace(/"/g, '&quot;') + '" data-cat="' + cat + '" data-id="' + item.id + '" data-field="name">' +
+        '<input value="' + (item.desc || '').replace(/"/g, '&quot;') + '" data-cat="' + cat + '" data-id="' + item.id + '" data-field="desc">' +
+        '<input type="number" value="' + item.price + '" data-cat="' + cat + '" data-id="' + item.id + '" data-field="price">' +
+        '<button data-cat="' + cat + '" data-id="' + item.id + '" data-action="delete">حذف</button>';
+
+      container.appendChild(div);
+    });
+  });
+
+  container.querySelectorAll('input').forEach(function (inp) {
+    inp.addEventListener('change', function () {
+      updateItem(
+        this.getAttribute('data-cat'),
+        this.getAttribute('data-id'),
+        this.getAttribute('data-field'),
+        this.value
+      );
+    });
+  });
+
+  container.querySelectorAll('button[data-action="delete"]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      deleteItem(this.getAttribute('data-cat'), this.getAttribute('data-id'));
+    });
+  });
+}
+
+function updateItem(cat, id, field, value) {
+  var menu = getMenu();
+  for (var i = 0; i < menu[cat].length; i++) {
+    if (menu[cat][i].id === id) {
+      menu[cat][i][field] = field === 'price' ? parseInt(value) || 0 : value;
+    }
+  }
+  saveMenu(menu);
+}
+
+function deleteItem(cat, id) {
+  if (!confirm('حذف این آیتم؟')) return;
+  var menu = getMenu();
+  menu[cat] = menu[cat].filter(function (i) { return i.id !== id; });
+  saveMenu(menu);
+  renderMenuEditor();
+}
+
+function addMenuItem() {
+  var cat = document.getElementById('newCategory').value;
+  var name = document.getElementById('newName').value.trim();
+  var desc = document.getElementById('newDesc').value.trim();
+  var price = parseInt(document.getElementById('newPrice').value) || 0;
+  var img = document.getElementById('newImg').value.trim();
+
+  if (!name) { alert('نام آیتم را وارد کن'); return; }
+  if (price <= 0) { alert('قیمت معتبر وارد کن'); return; }
+
+  var menu = getMenu();
+  var newId = cat.charAt(0) + Date.now();
+  menu[cat].push({ id: newId, name: name, desc: desc, price: price, img: img });
+  saveMenu(menu);
+
+  document.getElementById('newName').value = '';
+  document.getElementById('newDesc').value = '';
+  document.getElementById('newPrice').value = '';
+  document.getElementById('newImg').value = '';
+
+  renderMenuEditor();
+  alert('آیتم اضافه شد ✅');
+}
+
+function renderQRCodes() {
+  var container = document.getElementById('qrGrid');
+  if (!container) return;
+  container.innerHTML = '';
+
+  var baseUrl = window.location.origin + window.location.pathname.replace('admin.html', 'index.html');
+
+  for (var t = 1; t <= 30; t++) {
+    var url = baseUrl + '?table=' + t;
+    var div = document.createElement('div');
+    div.style.cssText = 'background:#fff; padding:15px; border-radius:10px; text-align:center;';
+
+    var img = document.createElement('img');
+    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(url);
+    img.style.cssText = 'width:100%; max-width:150px;';
+    img.alt = 'میز ' + t;
+
+    var label = document.createElement('div');
+    label.textContent = 'میز ' + t;
+    label.style.cssText = 'color:#000; font-weight:bold; margin-top:8px;';
+
+    div.appendChild(img);
+    div.appendChild(label);
+    container.appendChild(div);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  console.log('admin loaded');
+
+  document.querySelectorAll('.admin-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      showPanel(this.getAttribute('data-panel'));
+    });
+  });
+
+  var addBtn = document.getElementById('addItemBtn');
+  if (addBtn) addBtn.addEventListener('click', addMenuItem);
+
+  renderOrders();
+});
+</script>
+
+</body>
+</html>
